@@ -24,34 +24,34 @@
  * */
 export function calcTileType (index, boardSize) {
   if (index === 0) {
-    return 'top-left'
+    return 'top-left';
   } else if (index > 0 && index < boardSize - 1) {
-    return 'top'
+    return 'top';
   } else if (index === boardSize - 1) {
-    return 'top-right'
+    return 'top-right';
   } else if (index % boardSize === 0 && index !== boardSize ** 2 - boardSize) {
-    return 'left'
+    return 'left';
   } else if ((index + 1) % boardSize === 0 && index !== boardSize ** 2 - 1) {
-    return 'right'
+    return 'right';
   } else if (index === boardSize ** 2 - boardSize) {
-    return 'bottom-left'
+    return 'bottom-left';
   } else if (index < boardSize ** 2 - 1 && index > boardSize ** 2 - boardSize) {
-    return 'bottom'
+    return 'bottom';
   } else if (index === boardSize ** 2 - 1) {
-    return 'bottom-right'
+    return 'bottom-right';
   } else {
-    return 'center'
+    return 'center';
   }
 }
 
 export function calcHealthLevel (health) {
   if (health < 15) {
-    return 'critical'
+    return 'critical';
   }
 
   if (health < 50) {
-    return 'normal'
+    return 'normal';
   }
 
-  return 'high'
+  return 'high';
 }

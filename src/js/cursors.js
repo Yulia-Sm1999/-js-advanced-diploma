@@ -3,6 +3,6 @@ const cursors = {
   pointer: 'pointer',
   crosshair: 'crosshair',
   notallowed: 'not-allowed'
-}
+};
 
-export default cursors
+export default cursors;

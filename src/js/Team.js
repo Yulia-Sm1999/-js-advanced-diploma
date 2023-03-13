@@ -13,8 +13,8 @@
  * */
 export default class Team {
   constructor (characters) {
-    this.characters = characters
-    this.team = []
-    this.characters.forEach((character) => this.team.push(character.type))
+    this.characters = characters;
+    this.team = [];
+    this.characters.forEach((character) => this.team.push(character.type));
   }
 }

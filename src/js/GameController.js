@@ -1,64 +1,136 @@
-import PositionedCharacter from './PositionedCharacter'
-import Bowman from './characters/Bowman'
-import Daemon from './characters/Daemon'
-import Magician from './characters/Magician'
-import Swordsman from '././characters/Swordsman'
-import Undead from '././characters/Undead'
-import Vampire from '././characters/Vampire'
-import { generateTeam } from './generators'
+import PositionedCharacter from './PositionedCharacter';
+import Bowman from './characters/Bowman';
+import Daemon from './characters/Daemon';
+import Magician from './characters/Magician';
+import Swordsman from './characters/Swordsman';
+import Undead from './characters/Undead';
+import Vampire from './characters/Vampire';
+import { generateTeam } from './generators';
+import GamePlay from './GamePlay';
+import cursors from './cursors';
 
 export default class GameController {
   constructor (gamePlay, stateService) {
-    this.gamePlay = gamePlay
-    this.stateService = stateService
+    this.gamePlay = gamePlay;
+    this.stateService = stateService;
+    this.positions = [];
+    this.playerTypes = [Bowman, Swordsman, Magician];
+    this.competitorTypes = [Daemon, Vampire, Undead];
   }
 
   init () {
-    this.gamePlay.drawUi('prairie')
-    const playerTypes = [Bowman, Swordsman, Magician]
-    const competitorTypes = [Daemon, Vampire, Undead]
-    const playerTeam = generateTeam(playerTypes, 3, 4)
-    const competitorTeam = generateTeam(competitorTypes, 3, 4)
-    const positions = []
-    const randomPlayerIndex = [0, 8, 16, 24, 32, 40, 48, 56]
-    const randomCompetitorIndex = [7, 15, 23, 31, 39, 47, 63]
+    this.gamePlay.drawUi('arctic');
+    const playerTeam = generateTeam(this.playerTypes, 3, 4);
+    const competitorTeam = generateTeam(this.competitorTypes, 3, 4);
+
+    const playerIndexes = [];
+    for (let i = 0; i < this.gamePlay.boardSize ** 2; i += this.gamePlay.boardSize - 1) {
+      playerIndexes.push(i);
+      playerIndexes.push(++i);
+    }
+
+    const competitorIndexes = [];
+    for (let i = this.gamePlay.boardSize - 2; i < this.gamePlay.boardSize ** 2 + 1; i += this.gamePlay.boardSize - 1) {
+      competitorIndexes.push(i);
+      competitorIndexes.push(++i);
+    }
 
     playerTeam.characters.forEach((player) => {
-      let position = randomPlayerIndex[Math.floor(Math.random() * randomPlayerIndex.length)]
-      while (positions.some(obj => obj.position === position)) {
-        position = randomPlayerIndex[Math.floor(Math.random() * randomPlayerIndex.length)]
+      let position = playerIndexes[Math.floor(Math.random() * playerIndexes.length)];
+      while (this.positions.some(obj => obj.position === position)) {
+        position = playerIndexes[Math.floor(Math.random() * playerIndexes.length)];
       }
-      positions.push(new PositionedCharacter(player, position))
-    })
+      this.positions.push(new PositionedCharacter(player, position));
+    });
 
     competitorTeam.characters.forEach((competitor) => {
-      let position = randomCompetitorIndex[Math.floor(Math.random() * randomCompetitorIndex.length)]
-      while (positions.some(obj => obj.position === position)) {
-        position = randomCompetitorIndex[Math.floor(Math.random() * randomCompetitorIndex.length)]
+      let position = competitorIndexes[Math.floor(Math.random() * competitorIndexes.length)];
+      while (this.positions.some(obj => obj.position === position)) {
+        position = competitorIndexes[Math.floor(Math.random() * competitorIndexes.length)];
       }
-      positions.push(new PositionedCharacter(competitor, position))
-    })
-    this.gamePlay.redrawPositions(positions)
-    // this.gamePlay.redrawPositions([new PositionedCharacter(new Bowman(2), 1), new PositionedCharacter(new Daemon(2), 3)])
-    // TODO: add event listeners to gamePlay events
+      this.positions.push(new PositionedCharacter(competitor, position));
+    });
+    this.gamePlay.redrawPositions(this.positions);
+    this.addEnterListener();
+    this.addClickListener();
+    this.addLeaveListener();
     // TODO: load saved stated from stateService
   }
 
   onCellClick (index) {
-    // TODO: react to click
+    const alreadyActive = this.gamePlay.cells.find(cell => cell.classList.contains('selected'));
+    const characterInCell = this.positions.find(obj => obj.position === index);
+
+    if (alreadyActive) {
+      this.gamePlay.deselectCell(this.gamePlay.cells.indexOf(alreadyActive));
+    }
+
+    if (alreadyActive && !characterInCell) {
+      const activePosition = this.gamePlay.cells.indexOf(alreadyActive);
+      const position = this.positions.find(obj => obj.position === activePosition);
+      position.position = index;
+      this.gamePlay.redrawPositions(this.positions);
+    }
+
+    if (characterInCell && (this.playerTypes.some((type) => type.name === characterInCell.character.constructor.name))) {
+      this.gamePlay.selectCell(index);
+    }
+    if (characterInCell && !alreadyActive && !(this.playerTypes.some((type) => type.name === characterInCell.character.constructor.name))) {
+      GamePlay.showError('Сейчас Ваш ход');
+    }
+  }
+
+  toMove (player) {
+    const whereToMove = (step) => {
+      const activePosition = this.gamePlay.cells.indexOf(player);
+      const allowedPositions = [];
+      for (let i = activePosition; (i > -1) && (i < this.gamePlay.boardSize - 1); i++) {
+        allowedPositions.push(i);
+      }
+    };
+
+    if (player === Bowman) {
+      whereToMove(2);
+    }
+  }
+
+  addClickListener () {
+    this.gamePlay.addCellClickListener(this.onCellClick.bind(this));
   }
 
   onCellEnter (index) {
-    // if (!this.gamePlay.cells[index].classList.contains('cell')) {
-    //   this.gamePlay.showCellTooltip(`U+1F396 1 U+2694 10 U+1F6E1 40 U+2764 50`, index)
-    // }
+    const characterInCell = this.positions.find(obj => obj.position === index);
+    if (characterInCell) {
+      const alreadyActive = this.gamePlay.cells.find(cell => cell.classList.contains('selected'));
+      const playerChar = this.playerTypes.some((type) => type.name === characterInCell.character.constructor.name);
+      if ((this.gamePlay.cells.indexOf(alreadyActive) !== characterInCell.position) && playerChar) {
+        this.gamePlay.setCursor(cursors.pointer);
+      }
+    }
+    if (characterInCell) {
+      this.gamePlay.showCellTooltip(this.showCharacterInfo(characterInCell), index);
+    }
+  }
+
+  showCharacterInfo (character) {
+    const level = `\u{1F396} ${character.character.level} `;
+    const defence = `\u2694 ${character.character.defence} `;
+    const attack = `\u{1F6E1} ${character.character.attack} `;
+    const health = `\u2764 ${character.character.health}`;
+    return (level + defence + attack + health);
+  };
+
+  addEnterListener () {
+    this.gamePlay.addCellEnterListener(this.onCellEnter.bind(this));
   }
 
   onCellLeave (index) {
-    this.gamePlay.hideCellTooltip(index)
+    this.gamePlay.hideCellTooltip(index);
+    this.gamePlay.setCursor(cursors.auto);
+    console.log('done');
   }
 
-  addCellEnterListener () {
-    this.gamePlay.addCellEnterListener(this.onCellEnter)
+  addLeaveListener () {
+    this.gamePlay.addCellLeaveListener(this.onCellLeave.bind(this));
   }
 }

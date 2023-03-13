@@ -3,6 +3,6 @@ const themes = {
   desert: 'desert',
   arctic: 'arctic',
   mountain: 'mountain'
-}
+};
 
-export default themes
+export default themes;
